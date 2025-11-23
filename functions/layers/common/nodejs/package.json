@@ -1,0 +1,19 @@
+{
+  "name": "nodejs",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Damilola Fakorede",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^9.0.0",
+    "uuid": "^8.3.2"
+  }
+}

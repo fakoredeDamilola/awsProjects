@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+echo "== deploy a CFN to lambda for the user domain"
+
+STACK_NAME="event-user-domain-stack"
+
+aws cloudformation deploy\
+ --stack-name event-user-domain-stack\
+ --template-file template.yaml\
+ --no-execute-changeset\
+ --capabilities CAPABILITY_NAMED_IAM\
+ --parameter-overrides\
+   S3UserBucket=my-user-handler-12345 \
+   S3UserKey=users.zip \
+   S3EventBucket=my-events-handler-12345 \
+   S3EventKey=events.zip \
+   LayerS3Bucket=my-dependencies-artifacts-12345 \
+   LayerS3Key=layer.zip \
+   mongoURI=mongodb+srv://dfako:kolawole@nodejspassport.nahp0.mongodb.net/createevent \
+   jwtSecret=eventScreen

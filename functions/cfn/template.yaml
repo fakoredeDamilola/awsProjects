@@ -1,0 +1,284 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Typescript functions deployed to lambda and API Gateway"
+
+Parameters:
+      S3UserBucket:
+          Type: String
+          Description: "S3 bucket where Lambda zip is stored"
+      S3UserKey:
+          Type: String
+          Description: "S3 key of Lambda zip file"
+      S3EventBucket:
+          Type: String
+          Description: "S3 bucket where Lambda zip is stored"
+      S3EventKey:
+          Type: String
+          Description: "S3 key of Lambda zip file"
+      LayerS3Key:
+          Type: String
+          Description: "S3 key of Lambda Layer zip file"
+          Default: "layer.zip"
+      LayerS3Bucket:
+          Type: String
+          Description: "S3 bucket where Lambda Layer zip is stored"
+          Default: "my-dependencies-artifacts-12345"
+      LambdaUserHandler:
+          Type: String
+          Default: "handle-users.handlerUsers"
+      LambdaEventHandler:
+        Type: String
+        Default: "handle-events.handlerEvents"
+      Runtime:
+          Type: String
+          Default: "nodejs18.x"
+      MemorySize:
+          Type: Number
+          Default: 1024
+      Timeout:
+          Type: Number
+          Default: 30
+      StageName:
+          Type: String
+          Default: "dev"
+      mongoURI:
+          Type: String
+          Description: "MongoDB connection string (or use Secrets Manager instead)"
+      jwtSecret:
+          Type: String
+          Description: "JWT secret key (or use Secrets Manager instead)"
+
+Resources:
+    LambdaExecutionRole:
+        Type: AWS::IAM::Role
+        Properties:
+            RoleName: !Sub "${AWS::StackName}-lambda-exec"
+            AssumeRolePolicyDocument:
+                Version: "2012-10-17"
+                Statement:
+                    - Effect: Allow
+                      Principal:
+                          Service: lambda.amazonaws.com
+                      Action: sts:AssumeRole
+            Path: "/"
+            ManagedPolicyArns:
+                - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+            Policies:
+                - PolicyName: "LambdaExtraPolicy"
+                  PolicyDocument:
+                    Version: "2012-10-17"
+                    Statement:
+                        - Effect: Allow
+                          Action:
+                            - ssm:GetParameter
+                            - secretsmanager:GetSecretValue
+                          Resource: "*"
+    
+    DependenciesAndFuncLayer:
+        Type: AWS::Lambda::LayerVersion
+        Properties:
+            LayerName: !Sub "${AWS::StackName}-dependencies-and-func-layer"
+            Content:
+                S3Bucket: !Ref LayerS3Bucket
+                S3Key: !Ref LayerS3Key
+            CompatibleRuntimes:
+                - nodejs18.x
+    
+    UsersFunction:
+        Type: AWS::Lambda::Function
+        Properties:
+            FunctionName: !Sub "${AWS::StackName}-users"
+            Handler: !Ref LambdaUserHandler
+            Runtime: !Ref Runtime
+            MemorySize: !Ref MemorySize
+            Timeout: !Ref Timeout
+            Role: !GetAtt LambdaExecutionRole.Arn
+            Layers:
+                - !Ref DependenciesAndFuncLayer
+            Code:
+                S3Bucket: !Ref S3UserBucket
+                S3Key: !Ref S3UserKey
+            Environment:
+                Variables:
+                    mongoURI: !Ref mongoURI
+                    jwtSecret: !Ref jwtSecret
+                    NODE_ENV: "production"
+                    STAGE: !Ref StageName
+
+    EventsFunction:
+        Type: AWS::Lambda::Function
+        Properties:
+          FunctionName: !Sub "${AWS::StackName}-events"
+          Handler: !Ref LambdaEventHandler
+          Runtime: !Ref Runtime
+          MemorySize: !Ref MemorySize
+          Timeout: !Ref Timeout
+          Role: !GetAtt LambdaExecutionRole.Arn
+          Layers:
+            - !Ref DependenciesAndFuncLayer
+          Code:
+            S3Bucket: !Ref S3EventBucket
+            S3Key: !Ref S3EventKey
+          Environment:
+            Variables:
+              mongoURI: !Ref mongoURI
+              jwtSecret: !Ref jwtSecret
+              NODE_ENV: "production"
+              STAGE: !Ref StageName
+    LambdaInvokePermissionUsers:
+        Type: AWS::Lambda::Permission
+        Properties:
+            FunctionName: !GetAtt UsersFunction.Arn
+            Action: lambda:InvokeFunction
+            Principal: apigateway.amazonaws.com
+    LambdaInvokePermissionEvents:
+        Type: AWS::Lambda::Permission
+        Properties:
+            FunctionName: !GetAtt EventsFunction.Arn
+            Action: lambda:InvokeFunction
+            Principal: apigateway.amazonaws.com
+
+    ApiGatewayRestApi:
+      Type: AWS::ApiGateway::RestApi
+      Properties:
+        Name: !Sub "${AWS::StackName}-api"
+        EndpointConfiguration:
+          Types:
+            - REGIONAL
+    
+    ApiGatewayResourceUsers:
+      Type: AWS::ApiGateway::Resource
+      Properties:
+        ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
+        PathPart: "users"
+        RestApiId: !Ref ApiGatewayRestApi
+
+    ApiGatewayResourceEvents:
+      Type: AWS::ApiGateway::Resource
+      Properties:
+        ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
+        PathPart: "events"
+        RestApiId: !Ref ApiGatewayRestApi
+    
+    ApiGatewayResourceProxyUser:
+      Type: AWS::ApiGateway::Resource
+      Properties:
+        ParentId: !Ref ApiGatewayResourceUsers
+        PathPart: "{proxy+}"
+        RestApiId: !Ref ApiGatewayRestApi
+
+    ApiGatewayResourceProxyEvents:
+      Type: AWS::ApiGateway::Resource
+      Properties:
+        ParentId: !Ref ApiGatewayResourceEvents
+        PathPart: "{proxy+}"
+        RestApiId: !Ref ApiGatewayRestApi
+
+    ApiGatewayMethodUsersBase:
+      Type: AWS::ApiGateway::Method
+      Properties:
+        HttpMethod: ANY
+        ResourceId: !Ref ApiGatewayResourceUsers
+        RestApiId: !Ref ApiGatewayRestApi
+        AuthorizationType: NONE
+        Integration:
+          IntegrationHttpMethod: POST
+          Type: AWS_PROXY
+          Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UsersFunction.Arn}/invocations"
+
+    ApiGatewayMethodEventsBase:
+      Type: AWS::ApiGateway::Method
+      Properties:
+        HttpMethod: ANY
+        ResourceId: !Ref ApiGatewayResourceEvents
+        RestApiId: !Ref ApiGatewayRestApi
+        AuthorizationType: NONE
+        Integration:
+          IntegrationHttpMethod: POST
+          Type: AWS_PROXY
+          Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${EventsFunction.Arn}/invocations"
+
+    ApiGatewayMethodAnyUser:
+      Type: AWS::ApiGateway::Method
+      Properties:
+        HttpMethod: ANY
+        ResourceId: !Ref ApiGatewayResourceProxyUser
+        RestApiId: !Ref ApiGatewayRestApi
+        AuthorizationType: NONE
+        Integration:
+          IntegrationHttpMethod: POST
+          Type: AWS_PROXY
+          Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UsersFunction.Arn}/invocations"
+
+    ApiGatewayMethodAnyEvents:
+      Type: AWS::ApiGateway::Method
+      Properties:
+        HttpMethod: ANY
+        ResourceId: !Ref ApiGatewayResourceProxyEvents
+        RestApiId: !Ref ApiGatewayRestApi
+        AuthorizationType: NONE
+        Integration:
+          IntegrationHttpMethod: POST
+          Type: AWS_PROXY
+          Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${EventsFunction.Arn}/invocations"
+          
+    ApiGatewayMethodRootAny:
+      Type: AWS::ApiGateway::Method
+      Properties:
+        HttpMethod: ANY
+        ResourceId: !GetAtt ApiGatewayRestApi.RootResourceId
+        RestApiId: !Ref ApiGatewayRestApi
+        AuthorizationType: NONE
+        Integration:
+          IntegrationHttpMethod: POST
+          Type: AWS_PROXY
+          Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${UsersFunction.Arn}/invocations"
+
+    # ApiGatewayResourceProxyEvent:
+    #   Type: AWS::ApiGateway::Resource
+    #   Properties:
+    #     ParentId: !GetAtt ApiGatewayRestApi.RootResourceId
+    #     PathPart: "/events/{proxy+}"
+    #     RestApiId: !Ref ApiGatewayRestApi
+
+    # ApiGatewayMethodAnyEvent:
+    #   Type: AWS::ApiGateway::Method
+    #   Properties:
+    #     HttpMethod: ANY
+    #     ResourceId: !Ref ApiGatewayResourceProxyEvent
+    #     RestApiId: !Ref ApiGatewayRestApi
+    #     AuthorizationType: NONE
+    #     Integration:
+    #       IntegrationHttpMethod: POST
+    #       Type: AWS_PROXY
+    #       Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ExpressFunction.Arn}/invocations"
+          
+    # ApiGatewayMethodRootAnyEvent:
+    #   Type: AWS::ApiGateway::Method
+    #   Properties:
+    #     HttpMethod: ANY
+    #     ResourceId: !GetAtt ApiGatewayRestApi.RootResourceId
+    #     RestApiId: !Ref ApiGatewayRestApi
+    #     AuthorizationType: NONE
+    #     Integration:
+    #       IntegrationHttpMethod: POST
+    #       Type: AWS_PROXY
+    #       Uri: !Sub "arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${ExpressFunction.Arn}/invocations"
+
+    ApiGatewayDeployment:
+      Type: AWS::ApiGateway::Deployment
+      DependsOn:
+        - ApiGatewayMethodUsersBase
+        - ApiGatewayMethodEventsBase
+        - ApiGatewayMethodAnyUser
+        # - ApiGatewayMethodAnyEvent
+        - ApiGatewayMethodRootAny    
+      Properties:
+        RestApiId: !Ref ApiGatewayRestApi
+        StageName: !Ref StageName
+
+Outputs:
+  ApiGatewayUrl:
+    Description: "API Gateway URL"
+    Value: !Sub "https://${ApiGatewayRestApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}"
+      
+  

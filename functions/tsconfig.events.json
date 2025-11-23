@@ -1,0 +1,18 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./release/events-build",
+    "rootDir": ".",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  },
+  "include": [
+    "handle-events.ts",
+    "routes/events/**/*.ts",
+    "schemas/Event.ts",
+    "utils/**/*.ts",
+    "dbConnection.ts"
+  ],
+  "exclude": ["node_modules", "dist", "layers"]
+}

@@ -1,0 +1,18 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./release/users-build",
+    "rootDir": ".",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  },
+  "include": [
+    "handle-users.ts",
+    "routes/users/**/*.ts",
+    "schemas/User.ts",
+    "utils/**/*.ts",
+    "dbConnection.ts"
+  ],
+  "exclude": ["node_modules", "dist", "layers"]
+}

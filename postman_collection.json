@@ -1,0 +1,203 @@
+{
+  "info": {
+    "name": "CreateEvents API",
+    "description": "API collection for CreateEvents application with user authentication and event management",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{base_url}}/health",
+          "host": ["{{base_url}}"],
+          "path": ["health"]
+        },
+        "description": "Check if the server is running"
+      }
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"securePassword123\",\n  \"name\": \"John Doe\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "register"]
+            },
+            "description": "Register a new user account"
+          },
+          "response": []
+        },
+        {
+          "name": "Login User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"securePassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "login"]
+            },
+            "description": "Login with existing user credentials"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Events",
+      "item": [
+        {
+          "name": "Create Event",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "description": "JWT token from login/register"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Tech Conference 2025\",\n  \"description\": \"Annual technology conference featuring the latest innovations\",\n  \"date\": \"15/12/2025\",\n  \"registrationDateStart\": \"21/11/2025\",\n  \"registrationDateEnd\": \"10/12/2025\",\n  \"capacity\": 100,\n  \"imageKey\": \"events/tech-conference-2025.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/events/create",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events", "create"]
+            },
+            "description": "Create a new event (requires authentication)"
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Bookings",
+      "item": [
+        {
+          "name": "Create Booking",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "description": "JWT token from login/register"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"eventId\": \"your-event-id-here\",\n  \"seats\": 2\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/bookings/create",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bookings", "create"]
+            },
+            "description": "Create a booking for an event (requires authentication). User can only book once per event."
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Booking by ID",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "description": "JWT token from login/register"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/bookings/cancel/:bookingId",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bookings", "cancel", ":bookingId"],
+              "variable": [
+                {
+                  "key": "bookingId",
+                  "value": "your-booking-id-here"
+                }
+              ]
+            },
+            "description": "Cancel a booking by bookingId (requires authentication)"
+          },
+          "response": []
+        },
+        {
+          "name": "Unbook by Event ID",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "description": "JWT token from login/register"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/bookings/unbook/:eventId",
+              "host": ["{{base_url}}"],
+              "path": ["api", "bookings", "unbook", ":eventId"],
+              "variable": [
+                {
+                  "key": "eventId",
+                  "value": "your-event-id-here"
+                }
+              ]
+            },
+            "description": "Cancel a booking by eventId (requires authentication). Useful when user doesn't know bookingId."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}
