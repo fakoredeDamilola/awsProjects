@@ -583,7 +583,7 @@ Both Lambda functions receive these environment variables:
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| mongoURI | MongoDB connection string | mongodb+srv://user:pass@cluster.mongodb.net/db |
+| mongoURI | MongoDB connection string | mongb |
 | jwtSecret | Secret key for JWT signing | eventScreen |
 | NODE_ENV | Environment name | production |
 | STAGE | API Gateway stage | dev |
