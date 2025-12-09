@@ -1,9 +1,11 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {  APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
+import bcrypt from 'bcrypt';
 
 import {
   DynamoDBDocumentClient,
   ScanCommand,
+  PutCommand,
 } from "@aws-sdk/lib-dynamodb";
 
 const client = new DynamoDBClient({ 
@@ -23,15 +25,17 @@ export const handler = async(event:APIGatewayProxyEvent,context:Context): Promis
   };
 
   try {
-      console.log({http:event.httpMethod})
+      console.log({http:event.httpMethod,body:event.body})
     switch (event.httpMethod) {
-    case "GET /users":
-        body= await docClient.send(
-            new ScanCommand({
-                TableName: tableName,
-            })
-        )
-body = body.Items;
+    case "POST /users":
+        const {email,password,name} = JSON.parse(event.body)
+        // body= await docClient.send(
+        //     new PutCommand({
+        //         TableName: tableName,
+        //         Item: JSON.parse(event.body),
+        //     })
+        // )
+
 break;
 default:
         throw new Error(`Unsupported route: "${event.httpMethod}"`);
