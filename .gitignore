@@ -1,6 +1,32 @@
-*/node_modules
-*/local/
-*/dist
-*/layer
-*/release
-**/iac/**/.terraform
+# Terraform directories
+**/.terraform/
+**/.terraform/*
+
+# Terraform state
+**/*.tfstate
+**/*.tfstate.*
+**/terraform.tfstate
+**/terraform.tfstate.*
+
+# Terraform crash logs
+**/crash.log
+**/crash.*.log
+
+# Terraform variable files (often contain secrets)
+**/*.tfvars
+**/*.tfvars.json
+
+# Local overrides
+**/override.tf
+**/override.tf.json
+**/*_override.tf
+**/*_override.tf.json
+
+**/dist/*
+**/release/*
+**/local/*
+layer.zip
+.env
+
+
+node_modules

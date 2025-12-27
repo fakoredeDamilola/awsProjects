@@ -1,5 +1,7 @@
 import { DynamoDBClient } from "@aws-sdk/client-dynamodb";
-import {  APIGatewayProxyEvent, APIGatewayProxyResult, Context } from "aws-lambda";
+import {  APIGatewayProxyEventV2, APIGatewayProxyResult } from "aws-lambda";
+import * as dotenv from "dotenv";
+dotenv.config();
 
 import {
   DynamoDBDocumentClient,
@@ -7,15 +9,16 @@ import {
 } from "@aws-sdk/lib-dynamodb";
 
 const client = new DynamoDBClient({ 
-  // region: "us-east-1"
-  region: "local",
-  endpoint: "http://localhost:8000",
+  region: "us-east-1"
+  // region: "local",
+  // endpoint: "http://localhost:8000",
  });
 const docClient = DynamoDBDocumentClient.from(client);
 
-const tableName = "events-user-creation"
+const tableName = process.env.TABLE_NAME;
+console.log({tableName})
 
-export const handler = async(event:APIGatewayProxyEvent,context:Context): Promise<APIGatewayProxyResult> => {
+export const getUserhandler = async(event:APIGatewayProxyEventV2): Promise<APIGatewayProxyResult> => {
    let body;
   let statusCode = 200;
   const headers = {
@@ -23,19 +26,16 @@ export const handler = async(event:APIGatewayProxyEvent,context:Context): Promis
   };
 
   try {
-      console.log({http:event.httpMethod})
-    switch (event.httpMethod) {
-    case "GET /users":
+      console.log({http:event.requestContext.http.method})
+    console.log("getting item")
         body= await docClient.send(
             new ScanCommand({
                 TableName: tableName,
             })
         )
 body = body.Items;
-break;
-default:
-        throw new Error(`Unsupported route: "${event.httpMethod}"`);
-  }
+console.log("this is the GET body",{body})
+
   }catch(err:any) {
       statusCode = 400;
     body = err.message;

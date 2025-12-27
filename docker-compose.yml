@@ -8,3 +8,14 @@ services:
     volumes:
       - "./docker/dynamodb:/home/dynamodblocal/data"
     working_dir: /home/dynamodblocal
+
+  app:
+    build: .
+    container_name: user-node-app
+    command: npm run dev:server
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    depends_on:
+      - dynamodb-local

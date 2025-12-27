@@ -1,0 +1,15 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./release/users-build",
+    "rootDir": ".",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true
+  },
+  "include": [
+    "src/users/**/*.ts",
+    "src/handle-users.ts"
+  ],
+  "exclude": ["node_modules", "release", "layers", "iac", "build-users.sh", "users.tsconfig.json", "tsconfig.json", "README.md", "build-users.sh","docker-compose.yml","docker"]
+}

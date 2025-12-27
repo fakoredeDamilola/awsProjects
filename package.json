@@ -5,7 +5,10 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "local:get-users": "ts-node local-get-users.ts"
+    "local:get-users": "ts-node local/local-get-users.ts",
+    "local:put-users": "ts-node local/local-put-users.ts",
+     "dev:server": "ts-node src/handle-users.ts",
+     "build": "tsc"
   },
   "keywords": [],
   "author": "Damilola Fakorede",
@@ -15,10 +18,12 @@
     "@aws-sdk/client-dynamodb": "^3.940.0",
     "@aws-sdk/lib-dynamodb": "^3.940.0",
     "aws-lambda": "^1.0.7",
-    "bcrypt": "^6.0.0"
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.2.3"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.159",
+    "@types/bcrypt": "^6.0.0",
     "@types/node": "^24.10.2",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3"
